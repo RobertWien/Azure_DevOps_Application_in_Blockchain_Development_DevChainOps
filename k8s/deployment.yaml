@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web3app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web3app
+  template:
+    metadata:
+      labels:
+        app: web3app
+    spec:
+      containers:
+      - name: web3appcontainer
+        image:
+        ports:
+        - containerPort: 80

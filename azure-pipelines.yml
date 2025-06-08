@@ -1,0 +1,70 @@
+# Docker
+# Build, push an image to Azure Container Registry and deploy to AKS
+
+trigger:
+- main
+
+resources:
+- repo: self
+
+variables:
+  # Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: ''
+  imageRepository: 'web3_app_docker_image'
+  containerRegistry: 'rwcontainerregistry.azurecr.io'
+  dockerfilePath: 'Dockerfile'
+  tag: '$(Build.BuildId)'
+
+  # Kubernetes deployment variables
+  kubernetesServiceConnection: ''
+  namespace: 'default'
+  imagePullSecret: 'my-registry-secret'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  displayName: Build and push stage
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
+
+- stage: Deploy
+  displayName: Deploy to AKS
+  dependsOn: Build
+  jobs:
+  - job: DeployToAKS
+    displayName: Deploy Application to AKS
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: KubernetesManifest@1
+      displayName: Deploy to Kubernetes
+      inputs:
+        action: deploy
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceConnection: $(kubernetesServiceConnection)
+        namespace: $(namespace)
+        manifests: |
+          k8s/deployment.yaml
+          k8s/service.yaml
+        containers: |
+          web3appcontainer=$(containerRegistry)/$(imageRepository):$(tag)
+        imagePullSecrets: |
+          $(imagePullSecret)
+        rolloutStatusTimeout: '300'
+
+

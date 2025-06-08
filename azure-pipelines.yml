@@ -11,7 +11,7 @@ variables:
   # Container registry service connection established during pipeline creation
   dockerRegistryServiceConnection: ''
   imageRepository: 'web3_app_docker_image'
-  containerRegistry: 'rwcontainerregistry.azurecr.io'
+  containerRegistry: ''
   dockerfilePath: 'Dockerfile'
   tag: '$(Build.BuildId)'
 
